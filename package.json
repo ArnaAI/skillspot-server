@@ -1,0 +1,11 @@
+{
+  "name": "skillspot-server",
+  "version": "1.0.0",
+  "description": "skillspot node server for specific functionalities",
+  "main": "sever.js",
+  "scripts": {
+    "test": "node server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
