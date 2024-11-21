@@ -1,5 +1,9 @@
 const express = require("express");
+const multer = require("multer");
 const cors = require("cors");
+const pdfParse = require("pdf-parse");
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 
@@ -15,7 +19,7 @@ app.use(express.json());
 const upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
-            const uploadPath = path.join(__dirname, "../uploads");
+            const uploadPath = path.join(__dirname, "../../uploads");
             if (!fs.existsSync(uploadPath)) {
                 fs.mkdirSync(uploadPath);
             }
@@ -26,7 +30,6 @@ const upload = multer({
         },
     }),
     fileFilter: (req, file, cb) => {
-        // Allow only PDF files
         if (file.mimetype === "application/pdf") {
             cb(null, true);
         } else {
@@ -34,7 +37,7 @@ const upload = multer({
         }
     },
     limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB file size limit
+        fileSize: 5 * 1024 * 1024,  // 5MB file size limit
     },
 });
 
@@ -45,13 +48,10 @@ app.post("/upload", upload.single("file"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded." });
         }
 
-        const filePath = path.join(__dirname, "../uploads", req.file.filename);
-
-        // Parse the PDF file
+        const filePath = path.join(__dirname, "../../uploads", req.file.filename);
         const dataBuffer = fs.readFileSync(filePath);
         const pdfData = await pdfParse(dataBuffer);
 
-        // Extracted text from PDF
         const extractedText = pdfData.text;
 
         // Cleanup: Delete the uploaded file after processing
@@ -67,19 +67,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     }
 });
 
-// Global error handler for Multer
-app.use((err, req, res, next) => {
-    if (err instanceof multer.MulterError) {
-        // Multer-specific errors
-        return res.status(400).json({ message: err.message });
-    } else if (err) {
-        // General errors
-        return res.status(400).json({ message: err.message });
-    }
-    next();
-});
-
-// Export the Express app for Vercel serverless handling
+// Export the function for Vercel serverless handling
 module.exports = (req, res) => {
     app(req, res);
 };
