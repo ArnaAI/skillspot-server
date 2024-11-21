@@ -1,21 +1,19 @@
 const express = require("express");
+const multer = require("multer");
 const cors = require("cors");
-
+const pdfParse = require("pdf-parse");
+const path = require("path");
+const fs = require("fs");
 const app = express();
-
-// Middleware for CORS
-app.use(cors({
-    origin: "*",  // You can restrict this to your frontend domain
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"]
-}));
+const PORT = 5000;
+// Middleware
+app.use(cors());
 app.use(express.json());
-
 // Multer configuration for file uploads
 const upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
-            const uploadPath = path.join(__dirname, "../uploads");
+            const uploadPath = path.join(__dirname, "uploads");
             if (!fs.existsSync(uploadPath)) {
                 fs.mkdirSync(uploadPath);
             }
@@ -37,26 +35,20 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024, // 5MB file size limit
     },
 });
-
 // File upload route
 app.post("/upload", upload.single("file"), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: "No file uploaded." });
         }
-
-        const filePath = path.join(__dirname, "../uploads", req.file.filename);
-
+        const filePath = path.join(__dirname, "uploads", req.file.filename);
         // Parse the PDF file
         const dataBuffer = fs.readFileSync(filePath);
         const pdfData = await pdfParse(dataBuffer);
-
         // Extracted text from PDF
         const extractedText = pdfData.text;
-
         // Cleanup: Delete the uploaded file after processing
         fs.unlinkSync(filePath);
-
         res.json({ text: extractedText });
     } catch (error) {
         console.error("Error processing file:", error.message);
@@ -66,7 +58,6 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         });
     }
 });
-
 // Global error handler for Multer
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
@@ -78,8 +69,7 @@ app.use((err, req, res, next) => {
     }
     next();
 });
-
-// Export the Express app for Vercel serverless handling
-module.exports = (req, res) => {
-    app(req, res);
-};
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
