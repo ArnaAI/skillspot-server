@@ -6,7 +6,6 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
@@ -16,7 +15,7 @@ app.use(express.json());
 const upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
-            const uploadPath = path.join(__dirname, "uploads");
+            const uploadPath = path.join(__dirname, "../uploads");
             if (!fs.existsSync(uploadPath)) {
                 fs.mkdirSync(uploadPath);
             }
@@ -46,7 +45,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
             return res.status(400).json({ message: "No file uploaded." });
         }
 
-        const filePath = path.join(__dirname, "uploads", req.file.filename);
+        const filePath = path.join(__dirname, "../uploads", req.file.filename);
 
         // Parse the PDF file
         const dataBuffer = fs.readFileSync(filePath);
@@ -80,7 +79,7 @@ app.use((err, req, res, next) => {
     next();
 });
 
-// Start the server
-app.listen("PORT", () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Export the Express app as a serverless function for Vercel
+module.exports = (req, res) => {
+    app(req, res);
+};
